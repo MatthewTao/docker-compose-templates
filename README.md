@@ -2,6 +2,9 @@
 
 Collection of docker compose templates that might help self hosting some useful tools.
 
+Here's an interesting repo with a good list of things that can be hosted:
+<https://github.com/petersem/dockerholics>
+
 ## Ports used
 
 If you are leaving the ports unmodified,
