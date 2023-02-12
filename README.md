@@ -17,3 +17,15 @@ these are the ports that are in use by the services listed here:
 | grocy | 9283 |
 | heimdall | 8080, 8443|
 | syncthing | 8384 |
+
+## Quick docker compose guide
+
+Here are some of the frequently used commands when using docker compose:
+
+| Command | Effect |
+| --- | --- |
+| docker compose pull | Attempt to pull the associated image |
+| docker compose up | Builds, (re)creates, starts, and attaches to containers for a service|
+| docker compose down | Stops containers and removes containers, networks, volumes, and images created by up. |
+| docker compose stop | Stops running containers without removing them.|
+| docker compose start | Starts existing containers for a service.|
