@@ -12,4 +12,5 @@ these are the ports that are in use by the services listed here:
 | firefox | 3000 |
 | freshrss | 8082 |
 | grocy | 9283 |
+| heimdall | 8080, 8443|
 | syncthing | 8384 |
