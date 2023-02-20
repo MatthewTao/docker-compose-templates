@@ -12,4 +12,5 @@ services:
       - ${LOCAL_LOCATION}:/config
     ports:
       - 9283:80
+      - 9284:443
     restart: unless-stopped
