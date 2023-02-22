@@ -1,0 +1,9 @@
+version: '3.3'
+
+services:
+  plantuml-server:
+    image: plantuml/plantuml-server:jetty
+    container-name: plantuml-server
+    ports:
+      - 8090:8080
+    restart: unless-stopped
