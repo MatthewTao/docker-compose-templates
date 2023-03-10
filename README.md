@@ -12,6 +12,7 @@ these are the ports that are in use by the services listed here:
 
 | Service | Port |
 | --- | --- |
+| bookstack | 6875|
 | firefox | 3000 |
 | freshrss | 8082 |
 | grocy | 9283 |
