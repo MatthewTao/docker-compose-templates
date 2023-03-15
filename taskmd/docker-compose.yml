@@ -1,0 +1,14 @@
+version: '3.3'
+
+services:
+  task-md:
+    image: baldissaramatheus/tasks.md
+    container_name: task-md
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    ports:
+      - 8100:8080
+    volumes:
+      - ${LOCAL_LOCATION}:/api/files/
+    restart: unless-stopped
