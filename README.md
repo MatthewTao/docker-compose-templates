@@ -18,6 +18,7 @@ these are the ports that are in use by the services listed here:
 | grocy | 9283 |
 | heimdall | 8080, 8443|
 | syncthing | 8384 |
+| yacht | 8001 |
 
 ## Quick docker compose guide
 
