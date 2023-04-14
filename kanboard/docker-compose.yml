@@ -1,0 +1,12 @@
+version: '2'
+services:
+  kanboard:
+    image: kanboard/kanboard:latest
+    ports:
+      - "8088:80"
+      - "8444:443"
+    volumes:
+      - ${LOCAL_LOCATION}/data:/var/www/app/data
+      - ${LOCAL_LOCATION}/plugins:/var/www/app/plugins
+      - ${LOCAL_LOCATION}/ssl:/etc/nginx/ssl
+    restart: unless-stopped
