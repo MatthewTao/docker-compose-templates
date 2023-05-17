@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  filebrowser:
+    image: hurlenko/filebrowser
+    ports:
+      - 8110:8080
+    volumes:
+      - ${DATA_DIR}:/data
+      - ${CONFIG_DIR}:/config
+    restart: unless-stopped
