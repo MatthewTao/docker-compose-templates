@@ -33,3 +33,10 @@ The default `settings.json` is below:
 ```
 
 For the `filebrowser.db`, create an empty file first if there isn't one that you have already.
+
+## Change of plans
+
+Well, in the end, I used another easier way to get it running:
+<https://github.com/hurlenko/filebrowser-docker>.
+Will have to keep an eye on whether it is getting updated or not.
+For now, it has a lot of pulls.
