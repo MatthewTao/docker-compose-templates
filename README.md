@@ -32,3 +32,9 @@ Here are some of the frequently used commands when using docker compose:
 | docker compose down | Stops containers and removes containers, networks, volumes, and images created by up. |
 | docker compose stop | Stops running containers without removing them.|
 | docker compose start | Starts existing containers for a service.|
+
+## Other things to consider
+
+Code snippets <https://github.com/pawelmalak/snippet-box>
+Grist some kind of different spreadsheet <https://github.com/gristlabs/grist-core>
+diskover some kind of file indexer <https://github.com/diskoverdata/diskover-community>

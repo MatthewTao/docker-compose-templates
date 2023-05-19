@@ -1,0 +1,10 @@
+version: '3.3'
+services:
+  stirling-pdf:
+    image: frooodle/s-pdf
+    ports:
+      - ${PORT}:8080
+    volumes:
+      - ${LOCAL_LOCATION}:/configs
+    environment:
+      APP_LOCALE: ${APP_LOCALE}
