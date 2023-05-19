@@ -17,6 +17,7 @@ services:
       - ${LOCAL_LOCATION}/bookstackapp:/config
     ports:
       - 6875:80
+      - 6874:443
     restart: unless-stopped
     depends_on:
       - bookstack_db
