@@ -3,6 +3,5 @@ services:
   it-tools:
     image: corentinth/it-tools:latest
     ports:
-      - ${PORT:-8301}:8080
       - ${PORT:-8300}:80
     restart: unless-stopped
