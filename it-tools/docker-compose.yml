@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  stirling-pdf:
+    image: corentinth/it-tools:latest
+    ports:
+      - ${PORT:-8300}:8080
+    restart: unless-stopped
