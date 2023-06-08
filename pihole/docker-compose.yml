@@ -15,6 +15,6 @@ services:
       WEBPASSWORD: ${WEBPASSWORD:-set_secure_password}
     # Volumes store your data between container upgrades
     volumes:
-      - ${LOCAL_LOCATION:-/tmp/docker-volumes}:/etc
+      - ${LOCAL_LOCATION:-/tmp/docker-volumes/pihole}:/etc
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     restart: unless-stopped
