@@ -1,0 +1,1087 @@
+---
+version: "3.6"
+services:
+  #############################################   Frontends               ############################
+  #############################################   Traefik - Reverse proxy  ###########################
+  traefik:
+    hostname: traefik
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    domainname: ${DOMAINNAME} 
+    command: --api --docker --docker.domain=${DOMAINNAME} --docker.watch --loglevel=DEBUG
+    #command: --api --docker --docker.domain=docker.localhost --docker.watch --loglevel=DEBUG
+    networks:
+      - default
+      - traefik_proxy
+    ports:
+      #- "80:80"
+      #- "443:443"
+      - "8008:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=traefik"
+      - "traefik.port=8008"
+      - "traefik.protocol=http"
+      - "traefik.frontend.auth.basic=patrick:$$apr1$$GvZfZWBD$$elW3NQT0LACdrEp8PB2CT/"
+        #- "traefik.frontend.rule=Host:${DOMAINNAME}; PathPrefixStrip: /traefik"
+      - "traefik.frontend.rule=Host:traefik.${DOMAINNAME}"  
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${USERDIR}/docker/traefik/acme/acme.json:/acme.json
+      - ${USERDIR}/docker/compose/traefik.toml:/traefik.toml
+  #Letsencrypt                                                    ------------------------ Letsencrypt
+  letsencrypt:
+    image:  linuxserver/letsencrypt
+    container_name: le
+    ports:
+      - "447:443"
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - ${USERDIR}/docker/letsencrypt/config:/config
+    restart: always
+    depends_on:
+      - portainer
+      - heimdall
+      - organizr2
+      - lazylibrarian
+      - plex
+      - tautulli
+      - headphones
+      - lidarr
+      - couchpotato
+      - radarr
+      - sickrage
+      - sonarr
+      - airsonic
+      - glances
+      - ghost
+      - transmission-vpn
+      - sabnzbd
+        #- hydra2
+        #- nzbget
+        #- jackett
+        ##- duplicati
+        ##- bazarr
+        ##- homeassistant
+        ##- filebrowser
+        ##- ombi
+        ##- elkarbackup
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - URL=${DOMAINNAME}
+      - EMAIL=${EMAIL}
+      - SUBDOMAINS=wildcard
+      - VALIDATION=duckdns
+      - DUCKDNSTOKEN=${DUCKTOKEN}
+      - ONLY_SUBDOMAINS=false
+      - DHLEVEL=4096
+  ####################################   Docker related  ############################################
+  #Portainer - WebUI for docker containers                          ------------------------ Portainer
+  portainer:
+    image: "portainer/portainer"
+    hostname: portainer
+    container_name: portainer
+    restart: always
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - "9001:9000"
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${USERDIR}/docker/portainer/data:/data
+      - ${USERDIR}/docker/shared:/shared
+    environment:
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=portainer"
+      - "traefik.port=9000"
+      - "traefik.frontend.rule=Host:portainer.${DOMAINNAME}"  
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+        #- "trafik.frontend.entryPoint=http,https"
+  #Watchtower - Container update                                   ----------------------- Watchtower
+  watchtower:
+    container_name: watchtower
+    restart: always
+    image: "v2tec/watchtower"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/shared:/shared
+    environment:
+      - TZ=${TZ}
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=xxxxx.xxxxx@gmail.com
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=xxxxx.xxxxx@gmail.com
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=9vfyrje2fj@pomail.net
+      - WATCHTOWER_NOTIFICATIONS=email
+  ####################################   Webfrontends     ###########################################
+  #Organizr - Webui for all servers                                ------------------------- Organizr 
+  organizr2:
+    container_name: organizr2
+    restart: always
+    image: "organizrtools/organizr-v2"
+    volumes:
+      - ${USERDIR}/docker/organizr2:/config
+      - ${USERDIR}/docker/backups:/backups
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/docker/letsencrypt/config/etc/letsencrypt:/le-ssl
+    ports:
+      - "8888:80"
+    networks:
+      - default
+      - traefik_proxy
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=organizr2"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:organizr2.${DOMAINNAME}"  
+      - "traefik.docker.network=traefik_proxy"
+      - "trafik.frontend.entryPoint=http,https"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Heimdall                                                       -------------------------- Heimdall
+  heimdall:
+    image: "linuxserver/heimdall"
+    container_name: heimdall
+    ports:
+      - "81:80"
+      - "444:443"
+    networks:
+      - default
+      - traefik_proxy
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${USERDIR}/docker/heimdall:/config
+      - ${USERDIR}/docker/letsencrypt/config/etc/letsencrypt:/le-ssl
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=heimdall"
+      - "traefik.frontend.rule=Host:heimdall.${DOMAINNAME}"  
+      - "traefik.port=80"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Glances  System monitor                                         --------------------------- Glances
+  glances:
+    image: "docker.io/nicolargo/glances"
+    hostname: glances
+    container_name: glances
+    restart: always
+    #command: -H unix:///var/run/docker.sock
+    ports:
+      - "61208-61209:61208-61209"
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro 
+        #- ${USERDIR}/docker/glances/data:/data
+      - ${USERDIR}/docker/glances/config:/config
+        #- ${USERDIR}/docker/shared:/shared
+    environment:
+      - GLANCES_OPT=-w
+      - PID=host
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=glances"
+      - "traefik.frontend.rule=Host:glances.${DOMAINNAME}"  
+      - "traefik.port=61208-61209"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  ####################################    DynDNS related  ########################################### 
+  #Dyndnsclient                                                   -------------------------- DDClient
+  ddclient:
+    image: "linuxserver/ddclient"
+    hostname: ddclient
+    container_name: ddclient
+    restart: always
+    volumes:
+      - ${USERDIR}/docker/ddclient:/config
+    environment:    
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+  #Dyndnsclient                                                   --------------------------- DuckDNS
+  duckdns:
+    image: "linuxserver/duckdns"
+    hostname: duckdns
+    container_name: duckdns
+    volumes:
+      - ${USERDIR}/duckdns/config:/config
+    environment:  
+      - TZ=${TZ}
+        #- SUBDOMAINS=subdomain1,subdomain2
+      - SUBDOMAINS=dellubuntu.duckdns.org
+      - TOKEN=c3b277b7-5503-4544-b681-2bd5b529e332
+        # mem_limit: 4096m
+    restart: unless-stopped 
+  ######################################### Backup  #################################################
+  #Duplicati . Backup                                             ------------------------- Duplicati
+  #duplicati:
+  # image: "linuxserver/duplicati"
+  # container_name: duplicati
+  # restart: always
+  # ports:
+  #   - "8200:8200"
+  # networks:
+  #   - default
+  #   - traefik_proxy
+  # volumes:
+  #   - ${USERDIR}/docker/duplicati:/config
+  #   - ${USERDIR}/docker/backups:/backups
+  #   - ${USERDIR}/docker/shared:/shared
+  #   - ${USERDIR}/docker:/source
+  # environment:
+  #   - PUID=${PUID}
+  #   - PGID=${PGID}
+  #   - TZ=${TZ}
+  # labels:
+  #   - "traefik.enable=true"
+  #   - "traefik.backend=duplicati"
+  #     #- "traefik.frontend.rule=Host:duplicati.${DOMAINNAME}"  
+  #   - "traefik.frontend.rule=Host:${DOMAINNAME}; PathPrefixStrip: /duplicati"
+  #   - "traefik.port=8200"
+  #   - "traefik.docker.network=traefik_proxy"
+  #     #- "traefik.frontend.headers.sslredirect=true"
+  #     #- "traefik.frontend.headers.stsseconds=315360000"
+  #     #- "traefik.frontend.headers.browserxssfilter=true"
+  #     #- "traefik.frontend.headers.contenttypenosniff=true"
+  #     #- "traefik.frontend.headers.forcestsheader=true"
+  #     #- "traefik.frontend.headers.sslhost=example.com"
+  #     #- "traefik.frontend.headers.stsincludesubdomains=true"
+  #     #- "traefik.frontend.headers.stspreload=true"
+  #     #- "traefik.frontend.headers.framedeny=true"
+  #####################################   Organisers    ##############################################
+  #####################################   Music         ##############################################
+  #Headphones - Music downloader                                      --------------------- Headphones
+  headphones:
+    container_name: headphones
+    restart: always
+    image: "linuxserver/headphones"
+    volumes:
+      - ${USERDIR}/docker/headphones/config:/config
+      - ${USERDIR}/docker/backups:/backups
+      - ${USERDIR}/docker/headphones/data:/data
+        #- ${USERDIR}/docker/headphones/downloads:/downloads
+      - /media/all/Downloads/complete/music:/downloads
+      - /media/Music:/music
+      - ${USERDIR}/docker/letsencrypt/config/etc/letsencrypt:/le-ssl
+    ports:
+      - "8181:8281"
+    networks:
+      - traefik_proxy
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=headphones"
+      - "traefik.frontend.rule=Host:headphones.${DOMAINNAME}"  
+      - "traefik.port=8281"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #LIDARR - Music Download and Management                           -------------------------- Lidarr 
+  lidarr:
+    image: "linuxserver/lidarr"
+    hostname: lidarr
+    container_name: lidarr
+    volumes:
+      - ${USERDIR}/docker/lidarr:/config
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/Downloads/complete/music:/downloads
+      - /media/Music:/music
+        #- ${USERDIR}/Downloads:/downloads
+        #- ${USERDIR}/media/music:/music
+    ports:
+      - "8686:8686"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - "/etc/localtime:/etc/localtime:ro"
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=lidarr"
+      - "traefik.frontend.rule=Host:lidarr.${DOMAINNAME}"  
+      - "traefik.port=8686"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Airsonic - Mediastreamer (Music)                               ----------------------------- Airsonic
+  airsonic:
+    container_name: airsonic
+    restart: always
+    image: "linuxserver/airsonic"
+    volumes:
+      - ${USERDIR}/docker/emby/config:/config
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Music:/music
+        #- /media/all/playlists:/playlists
+    ports:
+      - "4040:4040"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks: 
+      - default
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=airsonic"
+      - "traefik.frontend.rule=Host:tautulli.${DOMAINNAME}"  
+      - "traefik.port=4040"
+      - "traefik.docker.network=traefik_proxy" 
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Beets - Music library manager                                     --------------------------- Beets
+  beets:
+    container_name: beets
+    restart: always
+    image: "linuxserver/beets"
+    ports:
+      - "8337:8337"
+    volumes:
+      - ${USERDIR}/docker/beets/config:/config
+      - /media/all/Downloads/complete/music:/downloads
+      - /media/Music:/music
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      -  "traefk.backend=beets"
+      - "traefik.frontend.rule=Host:beets.${DOMAINNAME}"
+      - "traefik.port=8337"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #####################################   eBooks         #############################################
+  #Lazylibrarian - organize ebooks                                  -------------------- Lazylibrarian
+  lazylibrarian:
+    container_name: lazylibrarian
+    restart: always
+    image: "linuxserver/lazylibrarian"
+    volumes:
+      - ${USERDIR}/docker/lazylibrarian/config:/config
+      - ${USERDIR}/docker/lazylibrarian/logs:/logs
+      - ${USERDIR}/docker/lazylibrarian/cache:/cache
+      - ${USERDIR}/docker/lazylibrarian/shared:/shared
+      - ${USERDIR}/docker/backups:/backups
+      - /media/Downloads/complete/epub:/downloads
+      - /media/all/ePubs:/books
+    ports:
+      - "5298:5299"
+    networks:
+      - traefik_proxy
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=lazylibrarian"
+      - "traefik.frontend.rule=Host:lazylibrarian.${DOMAINNAME}"  
+      - "traefik.port=5299"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #############################    PERSONAL VIDEO RECORDERS         ##################################
+  #Couchpotato - Movieorganizer and downloader                      ---------------------- CouchPotato
+  couchpotato:
+    image: "linuxserver/couchpotato"
+    hostname: couchpotato
+    container_name: couchpotato
+    volumes:
+      - ${USERDIR}/docker/couchpotato:/config
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/Downloads/complete/movies:/downloads
+      - /media/all:/media/movies
+    ports:
+      - "5050:5050"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=couchpotato"
+      - "traefik.frontend.rule=Host:couchpotato.${DOMAINNAME}"  
+      - "traefik.port=5050"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  # Radarr - Alternative Moviemanager/ downloader (Alternative)     --------------------------- Radarr
+  radarr:
+    image: "linuxserver/radarr"
+    hostname: radarr
+    container_name: radarr
+    volumes:
+      - ${USERDIR}/docker/radarr:/config
+      - ${USERDIR}/docker/radarr:/shared
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/Downloads/complete/movies:/downloads
+      - /media/all:/media/movies
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "7878:7878"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=radarr"
+      - "traefik.frontend.rule=Host:radarr.${DOMAINNAME}"  
+      - "traefik.port=7878"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #############################     TV shows        ##################################################
+  # SickRage – TV Show Download and Management (Alternative)        ------------------------- SickRage
+  sickrage:
+    image: "linuxserver/sickrage"
+    hostname: sickrage
+    container_name: "sickrage"
+    volumes:
+      #- ${USERDIR}/Downloads/completed:/downloads
+      #- ${USERDIR}/media/tvshows:/tv
+      - ${USERDIR}/docker/sickrage:/config
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/Downloads/complete/tv:/downloads
+      - /media/all:/media/all
+      - /media/tv1:/media/tv1
+      - /media/tv2:/media/tv2
+    ports:
+      - "8081:8081"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=sickrage"
+      - "traefik.frontend.rule=Host:sickrage.${DOMAINNAME}"  
+      - "traefik.port=8081"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Sonarr - Alternative tv-shows downloader/manager                 --------------------------- Sonarr
+  sonarr:
+    image: "linuxserver/sonarr"
+    hostname: sonarr
+    container_name: sonarr
+    ports:
+      - "8989:8989"
+    networks:
+      - traefik_proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/sonarr:/config
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/Downloads/complete/tv:/downloads
+      - /media/all:/media/all
+      - /media/tv1:/media/tv1
+      - /media/tv2:/media/tv2
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=sonarr"
+      - "traefik.frontend.rule=Host:sonarr.${DOMAINNAME}"  
+      - "traefik.port=8989"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #####################################   Plex Media Server     ######################################
+  #Plex MS                                                          -------------------------- Plex MS
+  plex:
+    image: "plexinc/pms-docker:latest"
+    container_name: "plexms"
+    restart: always
+    #net: host
+    volumes:
+      - ${USERDIR}/docker/plex/config:/config
+      - ${USERDIR}/docker/shared:/shared
+      - ${USERDIR}/docker/plex/plextemp:/transcode:rw
+      - ${USERDIR}/docker/backups:/backups
+      - /media/all/:/media/film
+        # - /media/all/!Film - 480p:/media/film 
+        #- /media/all/!Film - 720p:/media/film
+        #- /media/all/!Film - Barn - Disney:/media/film
+        #- /media/all/!Film - Barn:/media/film
+      - /media/tv1:/media/tv1
+      - /media/tv2:/media/tv2
+      - /media/all/Music:/media/music
+    ports:
+      - "32400:32400"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+    networks:
+      - default
+      - traefik_proxy
+    environment:
+      #- NET=host
+      - PLEX_UID=${PUID}
+      - PGID=${PGID}
+      - VERSION=latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=plexms"
+      - "traefik.frontend.rule=Host:plexms.${DOMAINNAME}"  
+      - "traefik.port=32400"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  ################################  MEDIA SERVER APPS   ##############################################
+  ## Tautulli                                                     --------------------------- Tautulli
+  tautulli:
+    container_name: tautulli
+    restart: always
+    image: "linuxserver/tautulli"
+    volumes:
+      - ${USERDIR}/docker/tautulli/config:/config
+      - ${USERDIR}/docker/plex/config/Library/"Application Support"/"Plex Media Server"/Logs:/logs
+      - ${USERDIR}/docker/tautulli/cache:/cache
+      - ${USERDIR}/docker/backups:/backups
+      - ${USERDIR}/docker/shared:/shared
+    ports:
+      - "8383:8181"
+    networks:
+      - traefik_proxy
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ} 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=tautulli"
+      - "traefik.frontend.rule=Host:tautulli.${DOMAINNAME}"  
+      - "traefik.port=8181"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #####################################  Downloaders      ############################################
+  #Transmission + VPN                                           --------------------- Transmission VPN
+  transmission-vpn:
+    container_name: transmission-vpn
+    image: haugene/transmission-openvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    restart: always
+    ports:
+      - "9091:9091"
+      - "51414:51414"
+    networks:
+      - traefik_proxy
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/transmission-vpn:/data
+      - ${USERDIR}/docker/transmission-vpn:/config
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Downloads/watched:/data/watched
+      - /media/all/Downloads/complete:/data/complete
+      - /media/all/Downloads/incomplete:/data/incomplete
+    environment:
+      - TRANSMISSION_SCRAPE_PAUSED_TORRENTS_ENABLED=false
+      - TRANSMISSION_INCOMPLETE_DIR=/data/incomplete
+      - TRANSMISSION_INCOMPLETE_DIR_ENABLED=true
+      - TRANSMISSION_WATCH_DIR=/data/watched
+      - TRANSMISSION_WATCH_DIR_ENABLED=true
+      - TRANSMISSION_DOWNLOAD_DIR=/data/complete
+      - OPENVPN_PROVIDER=ANONINE
+      - OPENVPN_USERNAME=mrakita
+      - OPENVPN_PASSWORD=
+      - OPENVPN_CONFIG="se-ovpn.anonine.net" 
+      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - LOCAL_NETWORK=192.168.1.0/24
+      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
+      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*,192.168.1.0/24"
+      - TRANSMISSION_RPC_PASSWORD=
+      - TRANSMISSION_RPC_USERNAME=transmission
+      - TRANSMISSION_UMASK=002
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - TRANSMISSION_BLOCKLIST_URL=http://john.bitsurge.net/public/biglist.p2p.gz
+      - TRANSMISSION_DOWNLOAD_QUE_SIZE=20
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=transmission-vpn"
+      - "traefik.frontend.rule=Host:transmission-vpn.${DOMAINNAME}"  
+      - "traefik.port=9091"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #NZBGet – Usenet (NZB) Downloader (Alternative)                   --------------------------- NZBget
+  nzbget:
+    image: "linuxserver/nzbget"
+    container_name: nzbget
+    volumes:
+      - ${USERDIR}/docker/sabnzbd:/config
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Downloads/complete:/downloads
+      - /media/all/Downloads/incomplete:/incomplete-downloads
+      - /media/all/Downloads/watched:/watched
+    ports:
+      - "6789:6789"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=nzbget"
+      - "traefik.frontend.rule=Host:nzbget.${DOMAINNAME}"  
+      - "traefik.port=6789"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  # SABnzbd – Usenet (NZB) Downloader                             ---------------------------- SABnzbd
+  sabnzbd:
+    image: "linuxserver/sabnzbd"
+    hostname: sabnzbd
+    container_name: "sabnzbd"
+    volumes:
+    # - ${USERDIR}/Downloads/completed:/downloads
+    # - ${USerdIR}/Downloads/incomplete:/incomplete-downloads
+      - ${USERDIR}/docker/sabnzbd:/config      
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Downloads/complete:/downloads/complete
+      - /media/all/Downloads/incomplete:/downlods/incomplete
+      - /media/all/Downloads/watched:/downloads/watched
+    ports:
+      - "8080:8080"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=sabnzbd"
+      - "traefik.frontend.rule=Host:sabnzbd.${DOMAINNAME}"  
+      - "traefik.port=8080"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  ######### SEARCHERS ##########
+  # Hydra2                                                           -------------------------- Hydra2
+  hydra2:
+    image: "linuxserver/hydra2"
+    container_name: "hydra2"
+    volumes:
+      - ${USERDIR}/docker/hydra:/config
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Downloads/complete:/downloads
+    ports:
+      - "5076:5076"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ} 
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=hydra2"
+      - "traefik.frontend.rule=Host:hydra2.${DOMAINNAME}"  
+      - "traefik.port=5076"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Jackett                                                          -------------------------- Jackett
+  jackett:
+    image: "linuxserver/jackett"
+    container_name: "jackett"
+    volumes:
+      - ${USERDIR}/docker/jackett:/config
+      - ${USERDIR}/docker/shared:/shared
+      - /media/all/Downloads/complete:/downloads
+    ports:
+      - "9117:9117"
+    networks:
+      - traefik_proxy
+    restart: always
+    environment:
+      - "/etc/localtime:/etc/localtime:ro"
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=jackett"
+      - "traefik.frontend.rule=Host:jackett.${DOMAINNAME}"  
+      - "traefik.port=9117"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #####################################  Misc stuff        ############################################
+  #MySQL  - databaseserver                                          ---------------------------- -MySQL
+  mysql:
+    image: "mysql:5.7"
+    container_name: mysql
+    hostname: mysql
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/mysql:/config
+      - ${USERDIR}/docker/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_DATABASE_GHOST=gh0st_db
+      - MYSQL_USER_ROOT=
+      - MYSQL_DATABASE=huginn_db
+      - MYSQL_USER=huginn
+      - MYSQL_PASSWORD=
+      - PUID=${PUID}
+      - PGID=${PGID}
+    networks:
+      - default
+  #ghost - alternative cms                                         ------------------------------- Ghost
+  ghost:
+    image: ghost:latest
+    container_name: ghost
+    hostname: ghost
+    restart: unless-stopped
+    ports:
+      - "85:2368"
+    volumes:
+      - ${USERDIR}/docker/ghost:/ghost
+    environment:
+      - database__connection__user=
+      - database__connection__password=
+      - database__connection__database=gh0st_db
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    depends_on: 
+      - mysql
+    command: ["node", "current/index.js"]
+    networks:
+      - traefik_proxy 
+    labels:
+      - "traefik.enable=false"
+      - "traefik.backend=ghost"
+      - "traefik.frontend.rule=Host:ghost.${DOMAINNAME}"  
+      - "traefik.port=2368"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Nextcloud - fileaccess everywhere                              --------------------------- Nextcloud
+  nextcloud:
+    image: linuxserver/nextcloud
+    container_name: nextcloud
+    hostname: nextcloud
+    restart: unless-stopped
+    ports: 
+      - "449:443"
+    volumes:
+      - ${USERDIR}/docker/nextcloud/config:/config
+      - ${USERDIR}/docker/nextcloud/data:/data
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks:
+      - default
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=nextcloud"
+      - "traefik.frontend.rule=Host:ghost.${DOMAINNAME}"  
+      - "traefik.port=443"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.frontend.headers.SSLRedirect=true"
+      - "traefik.frontend.headers.contentTypeNosniff=true"
+      - "traefik.frontend.headers.forceSTSHeader=true"
+      - "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=true"
+      - "traefik.frontend.headers.frameDeny=true"
+  #Huginn - dataminer                                           --------------------------------- Huginn
+  huginn:
+    image: "huginn/huginn:latest"
+    container_name: huginn
+    environment:
+      - HUGINN_DATABASE=huginn_db
+      - HUGINN_DATABASE_USERNAME=
+      - HUGINN_DATABASE_PASSWORD=
+      - DO_NOT_SEED=true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${USERDIR}/docker/huginn/config:/var/lib/mysql
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    networks:
+      - default
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=huginn"
+      - "traefik.frontend.rule=Host:huginn.${DOMAINNAME}"
+      - "traefik.port=3000"
+  #Guacamole - clientless RDP                                      -------------------------- Guacamole
+  #guacamole:
+    #image: guacamole/guacamole
+    #container_name: guacamole
+    #hostname: guacamole
+    #restart: unless-stopped
+    #ports:
+      #- "8585:8080"
+    #volumes:
+      #- ${USERDIR}/docker/guacamole/config:/config
+    #depends_on:
+      #- mysql
+      #- guacd
+    #environment:
+      #- MYSQL_PASSWORD=
+      #- MYSQL_DATABASE=guacamole_db
+      #- MYSQL_USER=
+      #- GUACD_HOSTNAME=guacd
+    #networks:
+      #- traefik_proxy
+    #links:
+      #- guacd
+    #labels:
+      #- "traefik.enable=true"
+      #- "traefik.backend=guacamole"
+      #- "traefik.frontend.rule=Host:guacamole.${DOMAINNAME}"  
+      #- "traefik.port=8080"
+      #- "traefik.docker.network=traefik_proxy"
+      #- "traefik.frontend.headers.SSLRedirect=true"
+      #- "traefik.frontend.headers.contentTypeNosniff=true"
+      #- "traefik.frontend.headers.forceSTSHeader=true"
+      #- "traefik.frontend.headers.SSLHost=dellubuntu.duckdns.org"
+      #- "traefik.frontend.headers.STSIncludeSubdomains=false"
+      #- "traefik.frontend.headers.STSPreload=true"
+      #- "traefik.frontend.headers.frameDeny=true"
+  #guacd:
+    #image: guacamole/guacd
+    #container_name: guacd
+    #hostname: guacd
+    #volumes:
+      #- ${USERDIR}/docker/guacd/config:/config
+    #depends_on: 
+      #- mysql
+    #networks:
+      #- traefik_proxy
+  ##Pi-Hole - Adblocker                                            ---------------------------- Pi-Hole
+  #pihole:
+  #  image: "diginc/pi-hole"
+  #  container_name: pihole
+  #  hostname: pihole
+  #  restart: unless-stopped
+  #  ports:
+  #    - "55:53/tcp"
+  #    - "55:53/udp"
+  #    - "68:67/udp"
+  #    - "86:80/tcp"
+  #    - "448:443/tcp"
+  # environment:
+  #    - ServerIP=${SERVER_IP}
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #    - WEBPASSWORD=
+  #    - DNS1=${DNS1}
+  #    - DNS2=${DNS2}
+  #    - VIRTUAL_HOST=${SERVER_IP}:86
+  #  dns: 
+  #    - 127.0.0.1
+  #    - 1.1.1.1
+  #  extra_hosts: 
+  #    - "dellubuntu.duckdns.org:${HOST_IP}"
+  #  volumes:
+  #    - ${USERDIR}/docker/pihole/:/config/
+  #    - ${USERDIR}/docker/pihole/:/etc/pihole/
+  #    - ${USERDIR}/docker/dnsmasq.d/:/etc/dnsmasq.d/
+  #    - ${USERDIR}/docker/pihole/pihole.log:/var/log/pihole.log
+  #  networks:
+  #    - default
+  #    - traefik_proxy
+##############################        Networks - for traefik              ################################
+networks:
+  traefik_proxy:
+    external:
+      name: traefik_proxy
+  default:
+    driver: bridge
