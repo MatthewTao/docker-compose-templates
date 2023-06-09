@@ -1,7 +1,7 @@
 version: '3.5'
 services:
   huginn:
-    image: huginn/huginn
+    image: ghcr.io/huginn/huginn
     restart: unless-stopped
     ports:
       - ${PORT}:3000
