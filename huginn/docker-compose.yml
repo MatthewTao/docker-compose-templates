@@ -1,0 +1,9 @@
+version: '3.5'
+services:
+  huginn:
+    image: huginn/huginn
+    restart: unless-stopped
+    ports:
+      - ${PORT}:3000
+    volumes:
+      - ${LOCAL_LOCATION}:/var/lib/mysql
