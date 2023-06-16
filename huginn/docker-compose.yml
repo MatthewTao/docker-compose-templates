@@ -7,3 +7,6 @@ services:
       - ${PORT}:3000
     volumes:
       - ${LOCAL_LOCATION}:/var/lib/mysql
+    environment:
+      - SCHEDULER_FREQUENCY: 0.5
+      - TIMEZONE: ${LOCAL_TIMEZONE:-Brisbane}
