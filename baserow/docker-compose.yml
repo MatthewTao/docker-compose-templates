@@ -1,0 +1,12 @@
+version: "3.4"
+services:
+  baserow:
+    container_name: baserow
+    image: baserow/baserow:latest
+    environment:
+      BASEROW_PUBLIC_URL: ${PUBLIC_URL}
+    ports:
+      - ${PORT}:80
+      - ${HTTPS_PORT}:443
+    volumes:
+      - ${LOCAL_LOCATION}:/baserow/data
