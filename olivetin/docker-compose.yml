@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  olivetin:
+    container_name: olivetin
+    image: jamesread/olivetin
+    volumes:
+      - ${LOCAL_LOCATION}:/config
+    ports:
+      - ${PORT}:1337
+    restart: unless-stopped
