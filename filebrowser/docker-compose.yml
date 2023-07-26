@@ -4,7 +4,7 @@ services:
   filebrowser:
     image: hurlenko/filebrowser
     ports:
-      - ${PORT}:8080
+      - ${PORT:-8110}:8080
     volumes:
       - ${DATA_DIR}:/data
       - ${CONFIG_DIR}:/config
