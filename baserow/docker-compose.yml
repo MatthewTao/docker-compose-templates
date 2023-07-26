@@ -10,3 +10,4 @@ services:
       - ${HTTPS_PORT}:443
     volumes:
       - ${LOCAL_LOCATION}:/baserow/data
+    restart: unless-stopped
