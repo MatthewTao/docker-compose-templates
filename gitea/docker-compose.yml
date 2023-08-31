@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  server:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=${PUID}
+      - USER_GID=${PGID}
+    restart: unless-stopped
+    volumes:
+      - ${LOCAL_LOCATION}:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "34109:3000"
+      - "222:22"
