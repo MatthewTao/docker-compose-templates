@@ -8,3 +8,4 @@ services:
         environment:
             - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN}
             - 'GITEA_INSTANCE_URL=${INSTANCE_URL}'
+        restart: unless-stopped
