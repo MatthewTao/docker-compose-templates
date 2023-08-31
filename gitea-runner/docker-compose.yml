@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+    act_runner:
+        image: 'gitea/act_runner:latest'
+        container_name: my_runner
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock'
+        environment:
+            - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN}
+            - 'GITEA_INSTANCE_URL=${INSTANCE_URL}'
