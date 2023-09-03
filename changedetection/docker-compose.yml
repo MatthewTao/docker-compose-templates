@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+    changedetection:
+        image: dgtlmoon/changedetection.io:latest
+        container_name: changedetection.io
+        volumes:
+            - './datastore:/datastore'
+        ports:
+            - '38279:5000'
+        restart: unless-stopped
