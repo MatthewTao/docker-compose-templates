@@ -1,0 +1,17 @@
+{
+    "stack_definitions": [
+        {
+            "template_dir": "Absolute path to override templates_root_directory",
+            "folder": "heimdall",
+            "volume_dir": "absolute path to override volumes_root_directory"
+        },
+        {
+            "folder": "bookstack"
+        },
+        {
+            "folder": "changedetection"
+        }
+    ],
+    "templates_root_directory": "absolute path to where the docker-compose-templates is",
+    "volumes_root_directory": "absolute path to where the volumes are"
+}
