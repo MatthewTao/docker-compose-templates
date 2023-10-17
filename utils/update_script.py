@@ -43,4 +43,4 @@ if __name__ == "__main__":
     config = get_config()
 
     for stack in config.get("stack_definitions"):
-        update_docker_stack(stack)
+        update_docker_stack(stack, config["templates_root_directory"])
