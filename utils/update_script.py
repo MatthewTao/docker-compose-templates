@@ -13,8 +13,10 @@ UPDATE_STEPS = {
         1: ["podman-compose", "down"],
         2: ["podman-compose", "pull"],
         3: ["podman-compose", "up", "-d"],
-    }
+    },
 }
+
+
 def get_location_of_script() -> str:
     """
     Returns the absolute location of the script
