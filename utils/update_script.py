@@ -3,6 +3,18 @@ import os
 import subprocess
 
 
+UPDATE_STEPS = {
+    "docker": {
+        1: ["docker", "compose", "down"],
+        2: ["docker", "compose", "pull"],
+        3: ["docker", "compose", "up", "-d"],
+    },
+    "podman": {
+        1: ["podman-compose", "down"],
+        2: ["podman-compose", "pull"],
+        3: ["podman-compose", "up", "-d"],
+    }
+}
 def get_location_of_script() -> str:
     """
     Returns the absolute location of the script
@@ -49,7 +61,7 @@ def back_up_dir(dir: str, volumes_root_dir: str) -> None:
 
 
 def update_docker_stack(
-    stack_details: dict, templates_root_directory: str
+    stack_details: dict, templates_root_directory: str, stack_type: str = "docker"
 ) -> tuple[bool, str]:
     template_parent_location: str = stack_details.get(
         "template_dir", templates_root_directory
@@ -64,10 +76,10 @@ def update_docker_stack(
         print(f"Could not change directory {e}")
         errors += str(e)
 
+    steps = UPDATE_STEPS[stack_type]
     try:
-        subprocess.call(["docker", "compose", "down"])
-        subprocess.call(["docker", "compose", "pull"])
-        subprocess.call(["docker", "compose", "up", "-d"])
+        for _, step in steps.items():
+            subprocess.call(step)
     except Exception as e:
         # Continue updating other stack if failed
         # Maybe add some kind of notification
