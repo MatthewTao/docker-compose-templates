@@ -61,7 +61,7 @@ def back_up_dir(dir: str, volumes_root_dir: str) -> None:
 
 
 def update_docker_stack(
-    stack_details: dict, templates_root_directory: str, stack_type: str = "docker"
+    stack_details: dict, templates_root_directory: str
 ) -> tuple[bool, str]:
     template_parent_location: str = stack_details.get(
         "template_dir", templates_root_directory
@@ -76,7 +76,7 @@ def update_docker_stack(
         print(f"Could not change directory {e}")
         errors += str(e)
 
-    steps = UPDATE_STEPS[stack_type]
+    steps = UPDATE_STEPS[stack_details.get("stack_type", "docker")]
     try:
         for _, step in steps.items():
             subprocess.call(step)
