@@ -61,6 +61,9 @@ def status_notification(status: bool, message: str) -> None:
 
 
 def back_up_dir(stack_details: dict, volumes_root_directory: str, backup_dir: str) -> None:
+    if stack_details.get("skip_backup") == "True":
+        # If the stack is not meant to be backed up, return and do nothing
+        return
     volume_parent_location: str = stack_details.get(
         "volume_dir", volumes_root_directory
     )

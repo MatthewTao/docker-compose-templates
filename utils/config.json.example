@@ -3,7 +3,8 @@
         {
             "template_dir": "Absolute path to override templates_root_directory",
             "folder": "heimdall",
-            "volume_dir": "absolute path to override volumes_root_directory"
+            "volume_dir": "absolute path to override volumes_root_directory",
+            "skip_backup": "True"
         },
         {
             "folder": "bookstack"
