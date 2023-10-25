@@ -13,5 +13,6 @@
         }
     ],
     "templates_root_directory": "absolute path to where the docker-compose-templates is",
-    "volumes_root_directory": "absolute path to where the volumes are"
+    "volumes_root_directory": "absolute path to where the volumes are",
+    "backup_root_directory": "absolute path to where the backups are held"
 }

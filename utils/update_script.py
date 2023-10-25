@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import os
 import subprocess
@@ -43,6 +44,9 @@ def get_config() -> dict:
     assert (
         config.get("volumes_root_directory") is not None
     ), "Config is missing `volumes_root_directory`"
+    assert (
+        config.get("backup_root_directory") is not None
+    ), "Config is missing `backup_root_directory`"
 
     return config
 
@@ -56,10 +60,16 @@ def status_notification(status: bool, message: str) -> None:
         print(f"Notification would have been sent")
 
 
-def back_up_dir(dir: str, volumes_root_dir: str) -> None:
-    dir_path = os.path.join(volumes_root_dir, dir)
+def back_up_dir(stack_details: dict, volumes_root_directory: str, backup_dir: str) -> None:
+    volume_parent_location: str = stack_details.get(
+        "volume_dir", volumes_root_directory
+    )
+    source_dir = stack_details["folder"]
+    dir_path = os.path.join(volume_parent_location, source_dir)
+    backup_path = os.path.join(backup_dir, f"{source_dir}_{dt.datetime.now().strftime('%Y%m%d%H%M%S')}.zip")
     os.chdir(dir_path)
     subprocess.call(["ls", "-l"])
+    subprocess.call(["zip", "-rq", backup_path, dir_path])
 
 
 def update_docker_stack(
@@ -97,7 +107,10 @@ if __name__ == "__main__":
     config = get_config()
 
     for stack in config["stack_definitions"]:
+        back_up_dir(stack, config["volumes_root_directory"], config["backup_root_directory"])
+        
         update_status, errors = update_docker_stack(
             stack, config["templates_root_directory"]
         )
+        
         status_notification(update_status, message=f"Stack update failed")
