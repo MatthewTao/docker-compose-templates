@@ -10,5 +10,6 @@ services:
     ports:
       - 8100:8080
     volumes:
-      - ${LOCAL_LOCATION}:/api/files/
+      - ${LOCAL_LOCATION}/tasks:/tasks/
+      - ${LOCAL_LOCATION}/config:/config/
     restart: unless-stopped
