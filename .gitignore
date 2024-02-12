@@ -1,3 +1,4 @@
 .env
 .vscode
 config.json
+path_to_config.json

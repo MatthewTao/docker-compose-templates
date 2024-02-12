@@ -38,3 +38,8 @@ Here are some of the frequently used commands when using docker compose:
 Code snippets <https://github.com/pawelmalak/snippet-box>
 Grist some kind of different spreadsheet <https://github.com/gristlabs/grist-core>
 diskover some kind of file indexer <https://github.com/diskoverdata/diskover-community>
+
+## Backup and update config
+
+Create a `config.json` file as per `utils/config.json.example`.
+Create a `path_to_config.json` file as per `utils/path_to_confgi.json.example` that includes the full absolute path to config file.

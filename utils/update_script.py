@@ -6,14 +6,14 @@ import subprocess
 
 UPDATE_STEPS = {
     "docker": {
-        1: ["docker", "compose", "down"],
-        2: ["docker", "compose", "pull"],
-        3: ["docker", "compose", "up", "-d"],
+        "stop": ["docker", "compose", "down"],
+        "update": ["docker", "compose", "pull"],
+        "start": ["docker", "compose", "up", "-d"],
     },
     "podman": {
-        1: ["podman-compose", "down"],
-        2: ["podman-compose", "pull"],
-        3: ["podman-compose", "up", "-d"],
+        "stop": ["podman-compose", "down"],
+        "update": ["podman-compose", "pull"],
+        "start": ["podman-compose", "up", "-d"],
     },
 }
 
@@ -30,7 +30,12 @@ def get_config() -> dict:
     """
     Reads and returns the config file
     """
-    config_location = os.path.join(get_location_of_script(), "config.json")
+    config_location_file = os.path.join(get_location_of_script(), "path_to_config.json")
+    
+    with open(config_location_file, "r") as config_location_file:
+        config_location = json.load(config_location_file).get("path_to_config")
+        assert config_location, "Path to config not specified. Please create one as per `path_to_config.json.example"
+
     with open(config_location, "r") as config_file:
         config = json.load(config_file)
 
@@ -83,6 +88,8 @@ def update_docker_stack(
     )
     template_directory = os.path.join(template_parent_location, stack_details["folder"])
 
+    stop_completed: bool = False
+    update_completed: bool = False
     success: bool = False
     errors: str = ""
     try:
@@ -93,13 +100,33 @@ def update_docker_stack(
 
     steps = UPDATE_STEPS[stack_details.get("stack_type", "docker")]
     try:
-        for _, step in steps.items():
-            subprocess.call(step)
+        stop_step = steps.get("stop")
+        subprocess.call(stop_step)
+        stop_completed = True
+
+        if config.get("skip_backup"):
+            back_up_dir(stack_details, config["volumes_root_directory"], config["backup_root_directory"])
+
+        update_step = steps.get("update")
+        subprocess.call(update_step)
+        update_completed = True
+
+        start_step = steps.get("start")
+        subprocess.call(start_step)
     except Exception as e:
         # Continue updating other stack if failed
         # Maybe add some kind of notification
         print(f"Failed to update stack {e}")
         errors += str(e)
+
+        if stop_completed is False and update_completed is False:
+            # No need to do anything
+            pass
+        elif stop_completed is True and update_completed is False:
+            print("Should just start the container again")
+        elif stop_completed is True and update_completed is True:
+            print("Something might be wrong with the start command or config")
+
     else:
         success = True
 
@@ -109,9 +136,7 @@ def update_docker_stack(
 if __name__ == "__main__":
     config = get_config()
 
-    for stack in config["stack_definitions"]:
-        back_up_dir(stack, config["volumes_root_directory"], config["backup_root_directory"])
-        
+    for stack in config["stack_definitions"]:        
         update_status, errors = update_docker_stack(
             stack, config["templates_root_directory"]
         )
