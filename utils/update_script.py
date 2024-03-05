@@ -106,6 +106,7 @@ def update_docker_stack(
 
         back_up_dir(stack_details, config["volumes_root_directory"], config["backup_root_directory"])
 
+        os.chdir(template_directory)
         update_step = steps.get("update")
         subprocess.call(update_step)
         update_completed = True
