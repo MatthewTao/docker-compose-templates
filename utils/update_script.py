@@ -104,8 +104,7 @@ def update_docker_stack(
         subprocess.call(stop_step)
         stop_completed = True
 
-        if config.get("skip_backup"):
-            back_up_dir(stack_details, config["volumes_root_directory"], config["backup_root_directory"])
+        back_up_dir(stack_details, config["volumes_root_directory"], config["backup_root_directory"])
 
         update_step = steps.get("update")
         subprocess.call(update_step)
