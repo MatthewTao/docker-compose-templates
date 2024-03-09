@@ -75,6 +75,8 @@ def back_up_dir(stack_details: dict, volumes_root_directory: str, backup_dir: st
     source_dir = stack_details["folder"]
     dir_path = os.path.join(volume_parent_location, source_dir)
     backup_path = os.path.join(backup_dir, f"{source_dir}_{dt.datetime.now().strftime('%Y%m%d%H%M%S')}.zip")
+    print(backup_path)
+    print(dir_path)
     os.chdir(dir_path)
     subprocess.call(["ls", "-l"])
     subprocess.call(["zip", "-rq", backup_path, dir_path])
