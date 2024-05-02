@@ -1,0 +1,8 @@
+services:
+  rss-bridge:
+    image: rssbridge/rss-bridge:latest
+    volumes:
+      - ./rss-bridge/config.ini.php:/app/config.ini.php
+    ports:
+      - 63127:80
+    restart: unless-stopped
