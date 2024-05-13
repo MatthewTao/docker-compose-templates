@@ -18,7 +18,7 @@ if __name__ == "__main__":
     logical_processors = os.cpu_count()
     print(f"Found {logical_processors} logical processors")
     start_time = time.time()
-    while time.time() - start_time < 60:
+    while time.time() - start_time < 120:
         print(f"{dt.datetime.now().isoformat()} - Create a batch of tasks")
         processes = []
         for _ in range(logical_processors):
