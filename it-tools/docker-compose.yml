@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   it-tools:
     image: corentinth/it-tools:latest

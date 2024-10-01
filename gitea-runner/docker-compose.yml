@@ -1,4 +1,3 @@
-version: '3.9'
 services:
     act_runner:
         image: 'gitea/act_runner:latest'
