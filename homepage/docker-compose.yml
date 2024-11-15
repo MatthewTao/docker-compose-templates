@@ -1,0 +1,9 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - 8888:3000
+    volumes:
+      - ./config:/app/config # Make sure your local config directory exists
+      - ./icons:/app/public/icons
