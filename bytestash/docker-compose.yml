@@ -1,0 +1,9 @@
+services:
+  bytestash:
+    image: "ghcr.io/jordan-dalby/bytestash:latest"
+    container_name: bytestash
+    volumes:
+      - ./data:/data/snippets
+    ports:
+      - 5000:5000
+    restart: unless-stopped
