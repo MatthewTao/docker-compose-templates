@@ -15,6 +15,7 @@ class NtfyConnectorStd:
     def push_notification(
         self, message: str, title: str = "", priority: str = "", tags: str = ""
     ):
+        print(message)
         arguments = {
             "url": self.url,
             "data": message.encode(encoding="utf-8"),
