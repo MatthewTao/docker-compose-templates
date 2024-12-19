@@ -1,4 +1,6 @@
 .env
 .vscode
+.idea
 config.json
 path_to_config.json
+*.pyc
