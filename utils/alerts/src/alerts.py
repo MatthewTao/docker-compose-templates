@@ -30,6 +30,11 @@ dead_letter_queue = []
 
 
 def show_appropriate_value(seconds_left) -> str:
+    if not isinstance(seconds_left, int) and not isinstance(seconds_left, float):
+        # Not an int or float ... psutil can use their custom representation for infinite
+        # Just the string of it will do while I haven't quite seen it in real life yet.
+        return repr(seconds_left)
+    
     if seconds_left > SECONDS_IN_HOUR:
         value = seconds_left / 3600
         unit = "hrs"
