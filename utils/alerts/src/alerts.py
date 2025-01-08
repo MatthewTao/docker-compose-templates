@@ -17,6 +17,7 @@ logging.basicConfig(
 )
 
 FIVE_MINUTES = 60 * 5
+SECONDS_IN_HOUR = 60 * 60
 
 device_name = os.environ.get("DEVICE_NAME", "testing")
 topic = os.environ.get("ALERT_NTFY_TOPIC")
@@ -26,6 +27,19 @@ on_battery = False
 half_battery = False
 
 dead_letter_queue = []
+
+
+def show_appropriate_value(seconds_left) -> str:
+    if seconds_left > SECONDS_IN_HOUR:
+        value = seconds_left / 3600
+        unit = "hrs"
+    elif seconds_left > FIVE_MINUTES:
+        value = seconds_left / 60
+        unit = "mins"
+    else:
+        value = seconds_left
+        unit = "s"
+    return f"{value:.2f} {unit}"
 
 
 @dataclasses.dataclass
@@ -43,22 +57,25 @@ if __name__ == "__main__":
         logging.exception(err_msg)
         raise Exception(err_msg)
     ntfy_connector = NtfyConnectorStd(topic)
+
+    seconds_left = 0
     while True:
         battery_status = psutil.sensors_battery()
         plugged_in = battery_status.power_plugged
+        previous_seconds_left = seconds_left
         seconds_left = battery_status.secsleft
         percent = battery_status.percent
         # print(f"Checked {battery_status=}, {plugged_in=}, {seconds_left=}, {percent=}")
         if not plugged_in and not on_battery:
             on_battery = True
-            message = f"{device_name} on battery power now, {seconds_left}s left"
+            message = f"{device_name} on battery power now. Battery at {percent}%, {show_appropriate_value(seconds_left)} left."
             logging.info(message)
 
         elif on_battery and not half_battery and percent < 50:
             half_battery = True
             message = f"{device_name} is on less than half battery now ({percent=}"
             try:
-                message += f", {int(seconds_left)}s left)"
+                message += f", {show_appropriate_value(seconds_left)} left)"
             except:
                 message += ")"
             logging.info(message)
@@ -66,7 +83,11 @@ if __name__ == "__main__":
         elif plugged_in and on_battery:
             on_battery = False
             half_battery = False
-            message = f"{device_name} on AC power now"
+            message = f"{device_name} on AC power now. Was at {percent}%"
+            try:
+                message += f", {show_appropriate_value(previous_seconds_left)} left."
+            except:
+                message += "."
             logging.info(message)
         else:
             message = None

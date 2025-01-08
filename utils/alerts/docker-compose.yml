@@ -1,5 +1,5 @@
 services:
-  misc-alerts:
+  power-alerts:
     build: .
     restart: unless-stopped
     env_file: .env
