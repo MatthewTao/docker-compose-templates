@@ -21,13 +21,16 @@ SECONDS_IN_HOUR = 60 * 60
 
 device_name = os.environ.get("DEVICE_NAME", "testing")
 topic = os.environ.get("ALERT_NTFY_TOPIC")
+low_threshold = int(os.environ.get("LOW_THRESHOLD", 20))
 check_frequency = int(os.environ.get("CHECK_FREQUENCY", FIVE_MINUTES))
 log_progress = int(os.environ.get("LOG_PROGRESS", 1))
 if log_progress > 1:
     raise Exception("LOG_PROGRESS must be 1 or 0")
 
 on_battery = False
+three_quarters_battery = False
 half_battery = False
+low_battery = False
 
 dead_letter_queue = []
 
@@ -81,6 +84,15 @@ if __name__ == "__main__":
             on_battery = True
             message = f"{device_name} on battery power now. Battery at {percent}%"
             logging.info(message)
+        
+        elif on_battery and not three_quarters_battery and percent < 75:
+            three_quarters_battery = True
+            message = f"{device_name} is on less than 75% battery now ({percent=}"
+            try:
+                message += f", {show_appropriate_value(seconds_left)} left)"
+            except:
+                message += ")"
+            logging.info(message)
 
         elif on_battery and not half_battery and percent < 50:
             half_battery = True
@@ -90,10 +102,21 @@ if __name__ == "__main__":
             except:
                 message += ")"
             logging.info(message)
+        
+        elif on_battery and not low_battery and percent < low_threshold:
+            low_battery = True
+            message = f"{device_name} is on low battery now ({percent=}"
+            try:
+                message += f", {show_appropriate_value(seconds_left)} left)"
+            except:
+                message += ")"
+            logging.info(message)
 
         elif plugged_in and on_battery:
             on_battery = False
+            three_quarters_battery = False
             half_battery = False
+            low_battery = False
             message = f"{device_name} on AC power now. Was at {percent}%"
             try:
                 message += f", {show_appropriate_value(previous_seconds_left)} left."
