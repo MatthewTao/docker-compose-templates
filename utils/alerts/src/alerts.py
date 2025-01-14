@@ -22,6 +22,9 @@ SECONDS_IN_HOUR = 60 * 60
 device_name = os.environ.get("DEVICE_NAME", "testing")
 topic = os.environ.get("ALERT_NTFY_TOPIC")
 check_frequency = int(os.environ.get("CHECK_FREQUENCY", FIVE_MINUTES))
+log_progress = int(os.environ.get("LOG_PROGRESS", 1))
+if log_progress > 1:
+    raise Exception("LOG_PROGRESS must be 1 or 0")
 
 on_battery = False
 half_battery = False
@@ -70,10 +73,13 @@ if __name__ == "__main__":
         previous_seconds_left = seconds_left
         seconds_left = battery_status.secsleft
         percent = battery_status.percent
-        # print(f"Checked {battery_status=}, {plugged_in=}, {seconds_left=}, {percent=}")
+
+        if log_progress == 1 and percent < 99:
+            logging.debug(f"{battery_status=}, {plugged_in=}, {seconds_left=}, {percent=}")
+
         if not plugged_in and not on_battery:
             on_battery = True
-            message = f"{device_name} on battery power now. Battery at {percent}%, {show_appropriate_value(seconds_left)} left."
+            message = f"{device_name} on battery power now. Battery at {percent}%"
             logging.info(message)
 
         elif on_battery and not half_battery and percent < 50:
