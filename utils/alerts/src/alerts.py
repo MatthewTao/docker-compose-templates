@@ -77,7 +77,7 @@ if __name__ == "__main__":
         seconds_left = battery_status.secsleft
         percent = battery_status.percent
 
-        if log_progress == 1 and percent < 99:
+        if log_progress == 1 and percent < 95:
             logging.debug(f"{battery_status=}, {plugged_in=}, {seconds_left=}, {percent=}")
 
         if not plugged_in and not on_battery:
