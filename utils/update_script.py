@@ -2,7 +2,7 @@ import datetime as dt
 import json
 import os
 import subprocess
-
+import time
 
 UPDATE_STEPS = {
     "docker": {
@@ -135,6 +135,18 @@ def update_docker_stack(
     return success, errors
 
 
+def get_pause_duration() -> int:
+    """
+    Docker hub has got some restrictions on how many pulls can happen in an hour now.
+    For now, just return a static wait.
+
+    Maybe in the future can make it configurable depending on where the image is from
+    """
+    pause_duration = 60 * 60  # Seconds in an hour
+    print(f"Waiting for {pause_duration} seconds before moving on")
+    return pause_duration
+
+
 if __name__ == "__main__":
     config = get_config()
 
@@ -144,3 +156,4 @@ if __name__ == "__main__":
         )
         
         status_notification(update_status, message=f"Stack update failed")
+        time.sleep(get_pause_duration())
