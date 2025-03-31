@@ -65,7 +65,16 @@ def status_notification(status: bool, message: str) -> None:
         print(f"Notification would have been sent")
 
 
+def stop_stack(steps):
+    print(f"{dt.datetime.now().isoformat()} - Stop Stack")
+    stop_step = steps.get("stop")
+    subprocess.call(stop_step)
+    print(f"{dt.datetime.now().isoformat()} - Stopped Stack")
+    return True
+
+    
 def back_up_dir(stack_details: dict, volumes_root_directory: str, backup_dir: str) -> None:
+    print(f"{dt.datetime.now().isoformat()} - Start Backup process")
     if stack_details.get("skip_backup") == "True":
         # If the stack is not meant to be backed up, return and do nothing
         return
@@ -80,6 +89,23 @@ def back_up_dir(stack_details: dict, volumes_root_directory: str, backup_dir: st
     os.chdir(dir_path)
     subprocess.call(["ls", "-l"])
     subprocess.call(["zip", "-rq", backup_path, dir_path])
+    print(f"{dt.datetime.now().isoformat()} - Finished Backup process")
+
+
+def update_stack(steps, template_directory):
+    print(f"{dt.datetime.now().isoformat()} - Start Update Stack")
+    os.chdir(template_directory)
+    update_step = steps.get("update")
+    subprocess.call(update_step)
+    print(f"{dt.datetime.now().isoformat()} - Finished Update Stack")
+    return True
+
+
+def start_stack(steps):
+    print(f"{dt.datetime.now().isoformat()} - Starting Stack")
+    start_step = steps.get("start")
+    subprocess.call(start_step)
+    print(f"{dt.datetime.now().isoformat()} - Started Stack")
 
 
 def update_docker_stack(
@@ -100,21 +126,16 @@ def update_docker_stack(
         print(f"Could not change directory {e}")
         errors += str(e)
 
-    steps = UPDATE_STEPS[stack_details.get("stack_type", "docker")]
+    stack_type = stack_details.get("stack_type", "docker")
+    steps = UPDATE_STEPS[stack_type]
     try:
-        stop_step = steps.get("stop")
-        subprocess.call(stop_step)
-        stop_completed = True
+        stop_completed = stop_stack(steps)
 
         back_up_dir(stack_details, config["volumes_root_directory"], config["backup_root_directory"])
 
-        os.chdir(template_directory)
-        update_step = steps.get("update")
-        subprocess.call(update_step)
-        update_completed = True
-
-        start_step = steps.get("start")
-        subprocess.call(start_step)
+        update_completed = update_stack(steps, template_directory)
+        
+        start_stack(steps)
     except Exception as e:
         # Continue updating other stack if failed
         # Maybe add some kind of notification
@@ -143,7 +164,7 @@ def get_pause_duration() -> int:
     Maybe in the future can make it configurable depending on where the image is from
     """
     pause_duration = 60 * 60  # Seconds in an hour
-    print(f"Waiting for {pause_duration} seconds before moving on")
+    print(f"{dt.datetime.now().isoformat()} - Waiting for {pause_duration} seconds before moving on")
     return pause_duration
 
 
